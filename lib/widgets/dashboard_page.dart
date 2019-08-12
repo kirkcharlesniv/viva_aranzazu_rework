@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:viva_aranzazu_rework/bloc/post/bloc.dart';
 import 'package:viva_aranzazu_rework/bloc/search/bloc.dart';
 import 'package:viva_aranzazu_rework/widgets/dashboard/index.dart';
 
@@ -61,13 +60,13 @@ class DataSearch extends SearchDelegate<String> {
   @override
   Widget buildResults(BuildContext context) {
     final searchBloc = BlocProvider.of<SearchBloc>(context);
-    searchBloc.dispatch(Search(query));
+    searchBloc.dispatch(Search(query: query));
     return BlocBuilder<SearchBloc, SearchState>(
       builder: (BuildContext context, SearchState state) {
-        if (state is PostUninitialized) {
+        if (state is SearchUninitialized) {
           return Center(child: Text('Start Searching'));
         }
-        if (state is SearchUninitialized) {
+        if (state is SearchError) {
           return Center(
             child: Text('Failed To Load Posts'),
           );
@@ -79,6 +78,7 @@ class DataSearch extends SearchDelegate<String> {
             );
           }
           return ListView.builder(
+            key: new PageStorageKey('myListView'),
             itemBuilder: (BuildContext context, int index) {
               return index >= state.posts.length
                   ? BottomLoader()

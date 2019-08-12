@@ -21,7 +21,8 @@ class App extends StatelessWidget {
           builder: (context) => SearchBloc(httpClient: http.Client()),
         ),
         BlocProvider<PostBloc>(
-          builder: (context) => PostBloc(httpClient: http.Client()),
+          builder: (context) =>
+              PostBloc(httpClient: http.Client())..dispatch(Fetch()),
         ),
       ],
       child: MaterialApp(

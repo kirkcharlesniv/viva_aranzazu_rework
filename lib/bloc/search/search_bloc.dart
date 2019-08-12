@@ -10,7 +10,6 @@ import './bloc.dart';
 class SearchBloc extends Bloc<SearchEvent, SearchState> {
   final http.Client httpClient;
   int index = 1;
-  String query;
   SearchBloc({@required this.httpClient});
 
   @override
@@ -36,13 +35,12 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     if (event is Search && !_hasReachedMax(currentState)) {
       try {
         if (currentState is SearchUninitialized) {
-          final posts = await _fetchPosts(index, query);
+          final posts = await _fetchPosts(index, event.query);
           yield SearchLoaded(posts: posts, hasReachedMax: false);
-          return;
         }
         if (currentState is SearchLoaded) {
           index += 1;
-          final posts = await _fetchPosts(index, query);
+          final posts = await _fetchPosts(index, event.query);
           yield posts.isEmpty
               ? (currentState as SearchLoaded).copyWith(hasReachedMax: true)
               : SearchLoaded(

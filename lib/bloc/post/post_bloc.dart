@@ -34,8 +34,8 @@ class PostBloc extends Bloc<PostEvent, PostState> {
       try {
         if (currentState is PostUninitialized) {
           final posts = await _fetchPosts(index);
+          print(posts);
           yield PostLoaded(posts: posts, hasReachedMax: false);
-          return;
         }
         if (currentState is PostLoaded) {
           index += 1;

@@ -7,8 +7,9 @@ abstract class SearchEvent extends Equatable {
 }
 
 class Search extends SearchEvent {
-  Search(String query);
+  final String query;
+  Search({@required this.query}) : super([query]);
 
   @override
-  String toString() => 'Search';
+  String toString() => 'Search { query: $query }';
 }
