@@ -19,7 +19,9 @@ class DashboardSearch extends StatelessWidget {
               color: Colors.white,
             ),
             onPressed: () {
-              showSearch(context: context, delegate: DataSearch());
+              showSearch(
+                  context: context,
+                  delegate: DataSearch(BlocProvider.of<SearchBloc>(context)));
             },
           )
         ],
@@ -31,9 +33,14 @@ class DashboardSearch extends StatelessWidget {
 
 class DataSearch extends SearchDelegate<String> {
   final _scrollController = ScrollController();
-
   final recentSearches = [];
   final searches = [];
+  final SearchBloc searchBloc;
+
+  int indexPage = 1;
+  String globalQueryString;
+
+  DataSearch(this.searchBloc);
 
   @override
   List<Widget> buildActions(BuildContext context) {
@@ -57,10 +64,23 @@ class DataSearch extends SearchDelegate<String> {
         });
   }
 
+  bool handleScrollNotification(ScrollNotification notification) {
+    if (notification is ScrollEndNotification &&
+        _scrollController.position.extentAfter == 0) {
+      print('REACHED END OF SEARCH!');
+      indexPage += 1;
+      searchBloc
+          .dispatch(FetchMore(query: globalQueryString, index: indexPage));
+    }
+    return false;
+  }
+
   @override
   Widget buildResults(BuildContext context) {
-    final searchBloc = BlocProvider.of<SearchBloc>(context);
-    searchBloc.dispatch(Search(query: query));
+    globalQueryString = query;
+    indexPage = 1;
+    searchBloc.dispatch(ResetSearch());
+    searchBloc.dispatch(Search(query: query, index: 1));
     return BlocBuilder<SearchBloc, SearchState>(
       builder: (BuildContext context, SearchState state) {
         if (state is SearchUninitialized) {
@@ -77,17 +97,20 @@ class DataSearch extends SearchDelegate<String> {
               child: Text('No Results'),
             );
           }
-          return ListView.builder(
-            key: new PageStorageKey('myListView'),
-            itemBuilder: (BuildContext context, int index) {
-              return index >= state.posts.length
-                  ? BottomLoader()
-                  : PostWidget(post: state.posts[index]);
-            },
-            itemCount: state.hasReachedMax
-                ? state.posts.length
-                : state.posts.length + 1,
-            controller: _scrollController,
+          return NotificationListener<ScrollNotification>(
+            onNotification: handleScrollNotification,
+            child: ListView.builder(
+              key: new PageStorageKey('myListView'),
+              itemBuilder: (BuildContext context, int index) {
+                return index >= state.posts.length
+                    ? BottomLoader()
+                    : PostWidget(post: state.posts[index]);
+              },
+              itemCount: state.hasReachedMax
+                  ? state.posts.length
+                  : state.posts.length + 1,
+              controller: _scrollController,
+            ),
           );
         }
         return Scaffold();

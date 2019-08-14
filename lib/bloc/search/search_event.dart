@@ -8,8 +8,26 @@ abstract class SearchEvent extends Equatable {
 
 class Search extends SearchEvent {
   final String query;
-  Search({@required this.query}) : super([query]);
+  final int index;
+
+  Search({@required this.query, @required this.index}) : super([query, index]);
 
   @override
-  String toString() => 'Search { query: $query }';
+  String toString() => 'Search { query: $query, index: $index }';
+}
+
+class ResetSearch extends SearchEvent {
+  @override
+  String toString() => 'SearchReset';
+}
+
+class FetchMore extends SearchEvent {
+  final String query;
+  final int index;
+
+  FetchMore({@required this.query, @required this.index})
+      : super([query, index]);
+
+  @override
+  String toString() => 'FetchMore { query: $query, index: $index }';
 }

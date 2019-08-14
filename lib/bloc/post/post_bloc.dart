@@ -1,25 +1,26 @@
-import 'package:bloc/bloc.dart';
-import 'package:meta/meta.dart';
-import 'package:http/http.dart' as http;
-import 'package:rxdart/rxdart.dart';
-import 'package:viva_aranzazu_rework/bloc/models/post.dart';
 import 'dart:async';
 import 'dart:convert';
+
+import 'package:bloc/bloc.dart';
+import 'package:http/http.dart' as http;
+import 'package:meta/meta.dart';
+import 'package:rxdart/rxdart.dart';
+import 'package:viva_aranzazu_rework/bloc/models/post.dart';
+
 import './bloc.dart';
 
 class PostBloc extends Bloc<PostEvent, PostState> {
   final http.Client httpClient;
   int index = 1;
+
   PostBloc({@required this.httpClient});
 
   @override
   PostState get initialState => PostUninitialized();
 
   @override
-  Stream<PostState> transform(
-    Stream<PostEvent> events,
-    Stream<PostState> Function(PostEvent event) next,
-  ) {
+  Stream<PostState> transform(Stream<PostEvent> events,
+      Stream<PostState> Function(PostEvent event) next,) {
     return super.transform(
       (events as Observable<PostEvent>).debounceTime(
         Duration(milliseconds: 500),
@@ -34,7 +35,6 @@ class PostBloc extends Bloc<PostEvent, PostState> {
       try {
         if (currentState is PostUninitialized) {
           final posts = await _fetchPosts(index);
-          print(posts);
           yield PostLoaded(posts: posts, hasReachedMax: false);
         }
         if (currentState is PostLoaded) {
@@ -43,9 +43,9 @@ class PostBloc extends Bloc<PostEvent, PostState> {
           yield posts.isEmpty
               ? (currentState as PostLoaded).copyWith(hasReachedMax: true)
               : PostLoaded(
-                  posts: (currentState as PostLoaded).posts + posts,
-                  hasReachedMax: false,
-                );
+            posts: (currentState as PostLoaded).posts + posts,
+            hasReachedMax: false,
+          );
         }
       } catch (_) {
         yield PostError();

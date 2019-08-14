@@ -1,15 +1,16 @@
-import 'package:meta/meta.dart';
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:bloc/bloc.dart';
 import 'package:http/http.dart' as http;
+import 'package:meta/meta.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:viva_aranzazu_rework/bloc/models/post.dart';
-import 'dart:async';
-import 'package:bloc/bloc.dart';
-import 'dart:convert';
+
 import './bloc.dart';
 
 class SearchBloc extends Bloc<SearchEvent, SearchState> {
   final http.Client httpClient;
-  int index = 1;
   SearchBloc({@required this.httpClient});
 
   @override
@@ -33,19 +34,33 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     SearchEvent event,
   ) async* {
     if (event is Search && !_hasReachedMax(currentState)) {
+      yield SearchUninitialized();
       try {
         if (currentState is SearchUninitialized) {
-          final posts = await _fetchPosts(index, event.query);
+          final posts = await _fetchSearchPosts(event.index, event.query);
           yield SearchLoaded(posts: posts, hasReachedMax: false);
         }
         if (currentState is SearchLoaded) {
-          index += 1;
-          final posts = await _fetchPosts(index, event.query);
+          final posts = await _fetchSearchPosts(event.index + 1, event.query);
           yield posts.isEmpty
               ? (currentState as SearchLoaded).copyWith(hasReachedMax: true)
               : SearchLoaded(
-                  posts: (currentState as SearchLoaded).posts + posts,
-                  hasReachedMax: false);
+              posts: (currentState as SearchLoaded).posts + posts,
+              hasReachedMax: false);
+        }
+      } catch (_) {
+        yield SearchError();
+      }
+    }
+    if (event is FetchMore && !_hasReachedMax(currentState)) {
+      try {
+        if (currentState is SearchLoaded) {
+          final posts = await _fetchSearchPosts(event.index + 1, event.query);
+          yield posts.isEmpty
+              ? (currentState as SearchLoaded).copyWith(hasReachedMax: true)
+              : SearchLoaded(
+              posts: (currentState as SearchLoaded).posts + posts,
+              hasReachedMax: false);
         }
       } catch (_) {
         yield SearchError();
@@ -56,8 +71,8 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
   bool _hasReachedMax(SearchState state) =>
       state is SearchLoaded && state.hasReachedMax;
 
-  // TODO: add string for search
-  Future<List<Post>> _fetchPosts(int index, String query) async {
+  Future<List<Post>> _fetchSearchPosts(int index, String query) async {
+    print('FetchPost { $index, $query }');
     final response = await httpClient.get(
         'http://aranzazushrine.ph/home/index.php/wp-json/capie/v1/search/beta/news?page=$index&s=$query');
     if (response.statusCode == 200) {
